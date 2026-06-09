@@ -8,6 +8,8 @@ import { useCheckout } from '../../hooks/useCheckout';
 import { openCashDrawer } from '../../services/cashDrawerService';
 import { Banknote, CreditCard, KeyRound } from 'lucide-react';
 
+import PaymentModal from './PaymentModal';
+
 export default function CartPanel() {
   const { 
     items, total, subtotal, taxAmount, 
@@ -16,6 +18,7 @@ export default function CartPanel() {
   
   const { handlePay } = useCheckout();
   const [isHeldModalOpen, setIsHeldModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   return (
     <div className="w-full h-full flex flex-col bg-card border-l border-border/50 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.05)] relative z-10">
@@ -84,26 +87,20 @@ export default function CartPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="flex gap-3 pt-2">
           <button 
-            onClick={() => handlePay('cash')}
+            onClick={() => setIsPaymentModalOpen(true)}
             disabled={items.length === 0}
-            className="col-span-2 bg-[#22c55e] hover:bg-[#16a34a] text-white py-4 rounded-xl font-bold text-xl disabled:opacity-50 transition-all-smooth flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-xl disabled:opacity-50 transition-all-smooth flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
           >
-            <Banknote className="w-6 h-6" /> CASH
-          </button>
-          <button 
-            onClick={() => handlePay('card')}
-            disabled={items.length === 0}
-            className="bg-[#3b82f6] hover:bg-[#2563eb] text-white py-3 rounded-xl font-bold disabled:opacity-50 transition-all-smooth flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
-          >
-            <CreditCard className="w-5 h-5" /> CARD
+            <Banknote className="w-6 h-6" /> PAY €{total.toFixed(2)}
           </button>
           <button 
             onClick={() => openCashDrawer()}
-            className="bg-[#f59e0b] hover:bg-[#d97706] text-white py-3 rounded-xl font-bold transition-all-smooth flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+            className="w-16 bg-[#f59e0b] hover:bg-[#d97706] text-white py-4 rounded-xl font-bold transition-all-smooth flex items-center justify-center shadow-sm hover:shadow-md active:scale-[0.98]"
+            title="Open Cash Drawer"
           >
-            <KeyRound className="w-5 h-5" /> DRAWER
+            <KeyRound className="w-6 h-6" />
           </button>
         </div>
       </div>
@@ -112,6 +109,14 @@ export default function CartPanel() {
       <HeldOrdersModal 
         isOpen={isHeldModalOpen} 
         onClose={() => setIsHeldModalOpen(false)} 
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        total={total}
+        onConfirm={handlePay}
       />
     </div>
   );

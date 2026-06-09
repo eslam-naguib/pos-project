@@ -16,10 +16,14 @@ export function useCheckout() {
   const { i18n } = useTranslation();
   const { showPopup } = usePopupStore();
 
-  const handlePay = async (method: 'cash' | 'card' | 'mixed') => {
+  const handlePay = async (
+    method: 'cash' | 'card' | 'mixed', 
+    cashGiven?: number, 
+    changeAmount?: number
+  ) => {
     if (items.length === 0) return;
     
-    if (method === 'cash') {
+    if (method === 'cash' || method === 'mixed') {
       await openCashDrawer();
     }
 
@@ -37,6 +41,8 @@ export function useCheckout() {
       discount: 0,
       total,
       paymentMethod: method,
+      cashGiven,
+      changeAmount,
       cashierId: '1', // Hardcoded for now
       invoiceLanguage: currentLang,
       status: 'completed',
@@ -60,6 +66,14 @@ export function useCheckout() {
       `Subtotal:           €${subtotal.toFixed(2).padStart(11)}`,
       `Tax:                €${taxAmount.toFixed(2).padStart(11)}`,
       `TOTAL:              €${total.toFixed(2).padStart(11)}`,
+      ...(method === 'cash' && cashGiven !== undefined ? [
+        `Cash Given:         €${cashGiven.toFixed(2).padStart(11)}`,
+        `Change:             €${(changeAmount || 0).toFixed(2).padStart(11)}`
+      ] : []),
+      ...(method === 'mixed' && cashGiven !== undefined ? [
+        `Cash Paid:          €${cashGiven.toFixed(2).padStart(11)}`,
+        `Card Paid:          €${(total - cashGiven).toFixed(2).padStart(11)}`
+      ] : []),
       '--------------------------------',
       footerText,
       `[BARCODE]${invoiceNumber}`
@@ -72,7 +86,7 @@ export function useCheckout() {
     showPopup({
       type: 'success',
       title: 'Payment Complete',
-      message: `Transaction for €${total.toFixed(2)} completed successfully via ${method}.`,
+      message: `Transaction for €${total.toFixed(2)} completed successfully.`,
     });
     
     clearCart();
