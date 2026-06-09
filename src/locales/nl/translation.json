@@ -1,0 +1,14 @@
+{
+  "pos": {
+    "cart": "Winkelwagen",
+    "total": "Totaal",
+    "subtotal": "Subtotaal",
+    "tax": "Belasting",
+    "discount": "Korting",
+    "pay": "Betalen",
+    "cash": "Contant",
+    "card": "Kaart",
+    "mixed": "Gemengd",
+    "openDrawer": "Kassa Openen"
+  }
+}

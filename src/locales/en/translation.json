@@ -1,0 +1,14 @@
+{
+  "pos": {
+    "cart": "Cart",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "discount": "Discount",
+    "pay": "Pay",
+    "cash": "Cash",
+    "card": "Card",
+    "mixed": "Mixed",
+    "openDrawer": "Open Drawer"
+  }
+}
