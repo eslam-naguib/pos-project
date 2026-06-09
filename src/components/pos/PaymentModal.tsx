@@ -44,6 +44,25 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm }: Paym
     onClose();
   };
 
+  const handleNumpadClick = (val: string) => {
+    if (val === 'C') {
+      setCashGivenStr('');
+      return;
+    }
+    if (val === '⌫') {
+      setCashGivenStr(prev => prev.slice(0, -1));
+      return;
+    }
+    if (val === '.' && cashGivenStr.includes('.')) {
+      return;
+    }
+    if (cashGivenStr === '0' && val !== '.') {
+      setCashGivenStr(val);
+      return;
+    }
+    setCashGivenStr(prev => prev + val);
+  };
+
   return (
     <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 transition-all-smooth p-4">
       <div className="bg-card p-6 rounded-3xl w-full max-w-lg shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] transform animate-in zoom-in-95 duration-200 border border-border/50">
@@ -118,6 +137,20 @@ export default function PaymentModal({ isOpen, onClose, total, onConfirm }: Paym
                   onClick={() => setCashGivenStr(d.toString())}
                 >
                   €{d}
+                </Button>
+              ))}
+            </div>
+
+            {/* Numeric Keypad for Touch Screens */}
+            <div className="grid grid-cols-4 gap-2 mt-4">
+              {['7', '8', '9', '⌫', '4', '5', '6', 'C', '1', '2', '3', '.', '0', '00', '000'].map((btn, idx) => (
+                <Button
+                  key={idx}
+                  variant={btn === 'C' || btn === '⌫' ? 'destructive' : 'outline'}
+                  className={`h-14 rounded-xl font-bold text-xl shadow-sm active:scale-95 transition-transform ${btn === '0' ? 'col-span-2' : ''} ${btn === 'C' || btn === '⌫' ? 'bg-destructive/10 text-destructive border-transparent hover:bg-destructive/20' : 'bg-white hover:bg-muted'}`}
+                  onClick={() => btn ? handleNumpadClick(btn) : undefined}
+                >
+                  {btn}
                 </Button>
               ))}
             </div>
