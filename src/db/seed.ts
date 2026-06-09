@@ -1,6 +1,11 @@
 import { db } from './database';
 import { v4 as uuidv4 } from 'uuid';
 
+/**
+ * Initializes the local database with default mock data.
+ * Checks if products already exist to avoid duplicating seed data on subsequent reloads.
+ * Injects default categories, sample products (standard and weight-based), and an Admin user.
+ */
 export const seedDatabase = async () => {
   const productsCount = await db.products.count();
   if (productsCount > 0) return; // Already seeded

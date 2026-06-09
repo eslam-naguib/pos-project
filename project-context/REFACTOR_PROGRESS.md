@@ -1,14 +1,14 @@
 # Refactor Progress
 
 ## Current
-* Pending approval to start Batch 1
+* Pending approval for Batch 2
 
 ## Completed
-
-## Remaining
 * src/db/models.ts
 * src/db/database.ts
 * src/db/seed.ts
+
+## Remaining
 * src/services/barcodeService.ts
 * src/services/cashDrawerService.ts
 * src/services/printerService.ts
