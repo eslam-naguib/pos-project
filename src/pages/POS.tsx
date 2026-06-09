@@ -4,6 +4,7 @@ import CartPanel from '../components/pos/CartPanel';
 import { decodeWeightBarcode } from '../services/barcodeService';
 import { db } from '../db/database';
 import { useCartStore } from '../store/cartStore';
+import { Search, Barcode } from 'lucide-react';
 
 export default function POS() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,21 +51,27 @@ export default function POS() {
   };
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full bg-muted/5 animate-in fade-in duration-500">
       {/* Left side: Products */}
-      <div className="w-[60%] flex flex-col h-full bg-muted/10">
-        <div className="p-4 border-b bg-card">
-          <input 
-            type="text" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleScan}
-            placeholder="Search products or scan barcode (press Enter)..." 
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-            autoFocus
-          />
+      <div className="w-[60%] flex flex-col h-full bg-transparent">
+        <div className="p-5 border-b border-border/50 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex items-center gap-3">
+          <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
+            <Barcode className="w-6 h-6" />
+          </div>
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input 
+              type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleScan}
+              placeholder="Scan barcode or search products (press Enter)..." 
+              className="w-full pl-12 pr-4 py-3.5 bg-white border border-border/50 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none shadow-sm transition-all-smooth text-base"
+              autoFocus
+            />
+          </div>
         </div>
-        {/* Category Filter will go here */}
+        
         <ProductGrid />
       </div>
 

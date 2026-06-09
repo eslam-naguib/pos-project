@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { Settings } from '../db/models';
 
+/**
+ * Default fallback configuration used if no settings row is found in Dexie.
+ */
 const defaultSettings: Settings = {
   storeName: { ar: 'متجر', en: 'Store', nl: 'Winkel' },
   storeAddress: '',
@@ -15,11 +18,19 @@ const defaultSettings: Settings = {
   autoOpenDrawerOnCash: true
 };
 
+/**
+ * Interface defining the global Settings state.
+ */
 interface SettingsState {
+  /** The current active store configuration */
   settings: Settings;
+  /** Action to load or update settings from the database into state */
   setSettings: (settings: Settings) => void;
 }
 
+/**
+ * Zustand store for managing global store configurations loaded from Dexie.
+ */
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: defaultSettings,
   setSettings: (settings) => set({ settings }),

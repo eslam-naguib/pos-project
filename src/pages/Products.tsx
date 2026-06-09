@@ -1,75 +1,20 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Input } from '../components/ui/input';
-import { v4 as uuidv4 } from 'uuid';
-import { generateEAN13 } from '../services/barcodeService';
-import { printReceipt } from '../services/printerService'; // reusing for barcode printing for now
 import { usePopupStore } from '../store/popupStore';
+import AddProductModal from '../components/products/AddProductModal';
+import { PackagePlus, Loader2 } from 'lucide-react';
+import type { Product } from '../db/models';
 
 export default function Products() {
   const products = useLiveQuery(() => db.products.toArray(), []);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const { showPopup } = usePopupStore();
-  
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImageBase64(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const isWeightBased = formData.get('isWeightBased') === 'on';
-    const plu = formData.get('plu') as string;
-    
-    // Auto generate barcode if not provided
-    let barcode = formData.get('barcode') as string;
-    if (!barcode) {
-      if (isWeightBased && plu) {
-         barcode = generateEAN13(plu, 0); // 0 weight baseline
-      } else {
-         barcode = generateEAN13(Math.floor(Math.random() * 1000000000000).toString());
-      }
-    }
-
-    await db.products.add({
-      id: uuidv4(),
-      barcode: barcode,
-      barcodeType: isWeightBased ? 'weight-based' : 'standard',
-      name: { 
-        en: formData.get('nameEn') as string,
-        ar: formData.get('nameAr') as string,
-        nl: formData.get('nameNl') as string
-      },
-      categoryId: 'default',
-      price: parseFloat(formData.get('price') as string),
-      costPrice: parseFloat(formData.get('costPrice') as string),
-      stock: parseInt(formData.get('stock') as string, 10),
-      minStock: parseInt(formData.get('minStock') as string, 10),
-      unit: formData.get('unit') as any,
-      isWeightBased,
-      taxRate: parseFloat(formData.get('taxRate') as string),
-      image: imageBase64 || undefined,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    
-    setIsModalOpen(false);
-    setImageBase64(null);
-  };
-
-  const handlePrintBarcode = (product: any) => {
+  const handlePrintBarcode = (product: Product) => {
     // In a real app, this would send an ESC/POS command to a label printer
-    // e.g., using brother-ql or raw zpl commands.
     showPopup({
       type: 'info',
       title: 'Printing Barcode',
@@ -78,100 +23,83 @@ export default function Products() {
   };
   
   return (
-    <div className="p-6 h-full flex flex-col gap-6 relative">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Products</h1>
-        <Button onClick={() => setIsModalOpen(true)}>Add Product</Button>
+    <div className="p-6 h-full flex flex-col gap-6 relative animate-in fade-in duration-500 bg-muted/5">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-border/50">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-secondary-foreground">Inventory Management</h1>
+          <p className="text-muted-foreground mt-1">Manage your products, barcodes, and stock levels.</p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} className="rounded-xl px-6 gap-2 h-12 shadow-md hover:shadow-lg transition-all-smooth">
+          <PackagePlus className="w-5 h-5" />
+          Add Product
+        </Button>
       </div>
       
-      <div className="bg-card rounded-xl border shadow flex-1 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl border border-border/50 shadow-sm flex-1 overflow-hidden flex flex-col">
         <div className="flex-1 overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name (EN)</TableHead>
-                <TableHead>Barcode</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products?.map(p => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    {p.image ? (
-                      <img src={p.image} alt="Product" className="w-10 h-10 rounded object-cover" />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">No img</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{p.name.en}</TableCell>
-                  <TableCell>{p.barcode}</TableCell>
-                  <TableCell className="text-right">€{p.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={p.stock <= p.minStock ? "text-destructive font-bold" : ""}>
-                      {p.stock} {p.unit}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => handlePrintBarcode(p)}>Print Barcode</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!products?.length && (
+          {!products ? (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin mb-4" />
+              <p>Loading products...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No products found
-                  </TableCell>
+                  <TableHead className="font-bold">Image</TableHead>
+                  <TableHead className="font-bold">Name (EN)</TableHead>
+                  <TableHead className="font-bold">Barcode</TableHead>
+                  <TableHead className="text-right font-bold">Price</TableHead>
+                  <TableHead className="text-right font-bold">Stock</TableHead>
+                  <TableHead className="text-right font-bold">Actions</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {products.map(p => (
+                  <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      {p.image ? (
+                        <img src={p.image} alt="Product" className="w-12 h-12 rounded-xl object-cover border shadow-sm" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center text-[10px] text-muted-foreground border">No img</div>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-bold text-secondary-foreground">{p.name.en}</TableCell>
+                    <TableCell className="font-mono text-sm">{p.barcode}</TableCell>
+                    <TableCell className="text-right font-semibold">€{p.price.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${p.stock <= p.minStock ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                        {p.stock} {p.unit}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => handlePrintBarcode(p)} className="rounded-lg font-semibold">
+                        Print Label
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {products.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-16 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center">
+                        <PackagePlus className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                        <p className="text-lg font-medium">No products found</p>
+                        <p className="text-sm opacity-70 mt-1">Click "Add Product" to populate your inventory.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
 
-      {/* Add Product Modal */}
-      {isModalOpen && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Add Product</h2>
-            <form onSubmit={handleAddProduct} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Input name="nameEn" placeholder="Name (English)" required />
-                <Input name="nameAr" placeholder="Name (Arabic)" required />
-                <Input name="nameNl" placeholder="Name (Dutch)" required />
-                <Input name="barcode" placeholder="Barcode (Leave empty to auto-generate)" />
-                <div className="col-span-2 flex items-center gap-2">
-                   <input type="checkbox" name="isWeightBased" id="isWeightBased" />
-                   <label htmlFor="isWeightBased">Weight-based product (Requires PLU)</label>
-                </div>
-                <Input name="plu" placeholder="5-digit PLU (if weight-based)" />
-                <Input name="price" type="number" step="0.01" placeholder="Selling Price (€)" required />
-                <Input name="costPrice" type="number" step="0.01" placeholder="Cost Price (€)" required />
-                <Input name="stock" type="number" placeholder="Initial Stock" required />
-                <Input name="minStock" type="number" placeholder="Min Stock Alert" required />
-                <Input name="taxRate" type="number" step="0.01" placeholder="Tax Rate (%)" defaultValue="21" required />
-                <select name="unit" className="border rounded px-3 py-2 bg-background">
-                  <option value="piece">Piece</option>
-                  <option value="kg">Kg</option>
-                  <option value="gram">Gram</option>
-                  <option value="liter">Liter</option>
-                </select>
-                <div className="col-span-2">
-                  <label className="block text-sm mb-1">Product Image</label>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                <Button type="submit">Save Product</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddProductModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 }
